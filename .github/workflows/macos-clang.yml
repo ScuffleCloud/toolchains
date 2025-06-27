@@ -120,10 +120,13 @@ jobs:
             llvm-ar \
             llvm-as \
             llvm-cov \
-            llvm-dwarfdump \
             llvm-dwp \
+            llvm-dwarfdump \
             llvm-libtool-darwin \
             llvm-nm \
+            clang-tidy \
+            clang-format \
+            clangd \
             llvm-objcopy \
             llvm-objdump \
             llvm-profdata \
