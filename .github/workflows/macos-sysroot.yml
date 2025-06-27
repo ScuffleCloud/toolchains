@@ -19,7 +19,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Clone MaterializeInc/toolchains repo
+      - name: Clone scufflecloud/toolchains repo
         uses: actions/checkout@v4
 
       - name: List Available SDKs

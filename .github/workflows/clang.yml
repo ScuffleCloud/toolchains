@@ -40,7 +40,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Clone asemic-io/toolchains repo
+      - name: Clone scufflecloud/toolchains repo
         uses: actions/checkout@v4
 
       - name: Get args

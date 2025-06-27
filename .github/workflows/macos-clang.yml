@@ -10,9 +10,9 @@ on:
         type: choice
         options:
           # ARM
-          - macos-latest-xlarge
+          - macos-14
           # x86_64
-          - macos-latest-large
+          - macos-13
       cpu_target:
         description: "Type of CPU to optimize for."
         type: string
@@ -37,7 +37,7 @@ jobs:
       - name: Install required tools
         run: brew install ninja zstd
 
-      - name: Clone MaterializeInc/toolchains repo
+      - name: Clone scufflecloud/toolchains repo
         uses: actions/checkout@v4
 
       - name: Clone llvm-project at Version
@@ -51,11 +51,11 @@ jobs:
       - name: Get args
         run: |
           case ${{ inputs.runner }} in
-            "macos-latest-xlarge")
+            "macos-14")
               CLANG_ARCH=aarch64
               ZSTD_ARG="-Dzstd_LIBRARY=/opt/homebrew/opt/zstd/lib/libzstd.a"
             ;;
-            "macos-latest-large")
+            "macos-13")
               CLANG_ARCH=x86_64
               ZSTD_ARG=""
             ;;

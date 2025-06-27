@@ -15,7 +15,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Clone asemic/toolchains repo
+      - name: Clone scufflecloud/toolchains repo
         uses: actions/checkout@v4
 
       - name: Get args
@@ -26,7 +26,7 @@ jobs:
       - name: Install nix
         uses: DeterminateSystems/nix-installer-action@main
 
-      - name: Build Sysroot in Docker
+      - name: Build Sysroot with nix
         run: |
           nix-shell \
             ./sysroot/shell.nix \
