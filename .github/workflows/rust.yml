@@ -38,6 +38,9 @@ jobs:
           - "clippy"
           - "llvm-tools"
           - "rustc-dev"
+        include:
+          - target: "wasm32-unknown-unknown"
+            component: "rust-std"
 
     steps:
       - name: Download Rust Components
