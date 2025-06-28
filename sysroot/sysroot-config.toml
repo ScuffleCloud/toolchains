@@ -17,6 +17,9 @@ packages = [
   "libc6",
   "libc6-dev",
   "linux-libc-dev",
+  # Rust wants -lgcc_s (which is very cringe) so this provides that.
+  # See https://github.com/rust-lang/rust/issues/65051
+  "libgcc-7-dev",
   "libgcc1",
 ]
 
@@ -36,6 +39,9 @@ packages = [
   "libc6-dev",
   "linux-libc-dev",
   "libgcc-s1",
+  # Rust wants -lgcc_s (which is very cringe) so this provides that.
+  # See https://github.com/rust-lang/rust/issues/65051
+  "libgcc-10-dev"
 ]
 
 deleted_patterns = [
