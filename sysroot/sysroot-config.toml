@@ -1,5 +1,5 @@
 [[platforms]]
-os = "focal"
+os = "bionic"
 archs = ["aarch64", "x86_64"]
 
 # Only put in here very intrinsic base system libraries
@@ -17,20 +17,25 @@ packages = [
   "libc6",
   "libc6-dev",
   "linux-libc-dev",
-  # HACK: @bowyer - I dislike this is here, but for some reason rust wnats this specifically for 
-  # unwinding - hope it plays nice with libunwind :/
-  # SEE: https://github.com/rust-lang/rust/issues/65051
-  # This is also a capitulation to the fact that we use libstdc++ in the sysroot
-  # as torch wants a gcc_s as well for unwinding
-  "libgcc-7-dev",
   "libgcc1",
+]
 
-  # NOTE: @bowyer - This is a capitulation for pytorch and ray. While we want to use libc++, pytorch
-  # (and ray) both link to "system" libs and include libstdc++. Without this in the sysroot we
-  # cannot run torch well, and we dont want to exclude ourselves from the torch ecosystem
-  "libstdc++6",
-  # HACK: ONLY if needed, leave disabled for now
-  #"libstdc++-7-dev",
+deleted_patterns = [
+  "etc",
+  "usr/bin",
+  "usr/share/doc",
+]
+
+
+[[platforms]]
+os = "focal"
+archs = ["aarch64", "x86_64"]
+
+packages = [
+  "libc6",
+  "libc6-dev",
+  "linux-libc-dev",
+  "libgcc-s1",
 ]
 
 deleted_patterns = [
