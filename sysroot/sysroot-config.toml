@@ -1,8 +1,4 @@
 [[platforms]]
-os = "bionic"
-archs = ["aarch64", "x86_64"]
-
-[[platforms]]
 os = "focal"
 archs = ["aarch64", "x86_64"]
 
