@@ -2,6 +2,10 @@
 os = "bionic"
 archs = ["aarch64", "x86_64"]
 
+[[platforms]]
+os = "focal"
+archs = ["aarch64", "x86_64"]
+
 # Only put in here very intrinsic base system libraries
 # ... what counts as a system library is a bit subjective, but generally
 # 1. It is highly ABI stable in terms of _forward compatibility_ (think glibc)
