@@ -13,7 +13,7 @@ on:
         description: "DANGEROUS. Overwrite the existing artifacts."
         type: boolean
 
-name: Linux Clang
+name: Clang
 
 env:
   GIT_TAG: ${{ inputs.github_tag ||  format('clang-{0}-{1}', github.run_id) }}
