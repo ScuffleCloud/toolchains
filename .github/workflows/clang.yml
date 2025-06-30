@@ -15,7 +15,7 @@ on:
 name: Clang
 
 env:
-  GIT_TAG: ${{ inputs.github_tag ||  format('clang-{0}-{1}', github.run_id) }}
+  GIT_TAG: ${{ inputs.github_tag ||  format('clang-{0}-{1}', inputs.clang_version, github.run_id) }}
   OVERWRITE: ${{ inputs.overwrite || inputs.github_tag == '' }}
 
 jobs:
