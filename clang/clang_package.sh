@@ -15,30 +15,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -exo pipefail
+set -exuo pipefail
 
 # Version of clang we built.
 clang_version="$1"
-# Architecture we're building for.
-build_arch="$2"
 
-case $build_arch in
-    "amd64")
-        clang_arch=x86_64
-    ;;
-    "arm64")
-        clang_arch=aarch64
-    ;;
-    *)
-        echo "Programming error, unknown platform"
-        exit 1
-    ;;
-esac
+clang_arch="$(uname -m)"
 
 # These values are used in the `.txt` files that define what we package.
-clang_target="$clang_arch-unknown-linux-gnu"
-clang_major=$(echo "$clang_version" | cut -d '.' -f 1)
-clang_major_minor=$(echo "$clang_version" | cut -d. -f1-2)
+clang_target="${clang_arch}-unknown-linux-gnu"
+clang_major="$(echo "${clang_version}" | cut -d '.' -f 1)"
+clang_major_minor="$(echo "${clang_version}" | cut -d. -f1-2)"
 shared_extension="so"
 
 # Package the toolchain by copying everything listed from the following files:
@@ -53,7 +40,7 @@ shared_extension="so"
 
 mkdir package
 
-mv llvm-project/build/include/$clang_target/c++/v1/__config_site llvm-project/build/include/c++/v1/__config_site
+mv "llvm-project/build/include/${clang_target}/c++/v1/__config_site" "llvm-project/build/include/c++/v1/__config_site"
 
 # Copy all of the files into the 'package' dir.
 #
@@ -62,13 +49,13 @@ mv llvm-project/build/include/$clang_target/c++/v1/__config_site llvm-project/bu
 # include them all.
 
 for dir in bin include lib; do
-    mkdir package/$dir
-    cat $dir.txt | while read -r val; do 
+    mkdir "package/${dir}"
+    cat "${dir}.txt" | while read -r val; do 
         # Strip the 'linux:' prefix if it exists.
-        val=${val#linux:}
+        val="${val#linux:}"
         # Skip anything that starts with a 'mac' prefix.
-        if [[ $val != mac* && -n $val ]]; then
-            eval cp -rP llvm-project/build/$dir/$val package/$dir/
+        if [[ ${val} != mac* && -n ${val} ]]; then
+            eval cp -rP "llvm-project/build/${dir}/${val}" "package/${dir}/"
         fi
     done
 done
@@ -76,44 +63,36 @@ done
 # Compress the whole directory.
 
 cd package
-tar -cf - * | zstd --ultra -22 -o "../linux_$clang_arch.tar.zst"
+tar -cf - * | zstd --ultra -22 -o "../linux_${clang_arch}.tar.zst"
 
 cd ..
 mkdir artifacts
-mv "linux_$clang_arch.tar.zst" "artifacts/linux_$clang_arch.tar.zst"
+mv "linux_${clang_arch}.tar.zst" "artifacts/linux_${clang_arch}.tar.zst"
 
 # Package up a libclang toolchain.
 
 mkdir package_libclang
 
 # Linux nests the libc++ one directory deep, so let's move that up.
-eval cp -rP llvm-project/build/lib/$clang_target/libc++* llvm-project/build/lib/.
+eval cp -rP "llvm-project/build/lib/${clang_target}/libc++"* llvm-project/build/lib/.
 
 for dir in bin lib; do
-    mkdir package_libclang/$dir
-    cat "$dir"_libclang.txt | while read -r val; do
+    mkdir "package_libclang/${dir}"
+    cat "${dir}"_libclang.txt | while read -r val; do
         # Skip anything that starts with "mac".
-        if [[ "$val" == mac* && -n $val ]]; then
+        if [[ "${val}" == mac* && -n ${val} ]]; then
             continue
         fi
         # Strip the 'linux:' prefix if it exists.
-        val=${val#linux:}
-        
-        # Determine which build artifacts to read from.
-        build_dir="build_libclang"
-        if [[ "$val" == build:* ]]; then
-            build_dir="build"
-        fi
-        # Strip the 'build:' prefix if it exists.
-        val=${val#build:}
-        eval cp -rP llvm-project/$build_dir/$dir/$val package_libclang/$dir/
+        val="${val#linux:}"
+        eval cp -rP "llvm-project/build/${dir}/${val}" "package_libclang/${dir}/"
     done
 done
 
 # Compress the whole directory.
 
 cd package_libclang
-tar -cf - * | zstd --ultra -22 -o ../linux_"$clang_arch"_libclang.tar.zst
+tar -cf - * | zstd --ultra -22 -o "../linux_${clang_arch}_libclang.tar.zst"
 
 cd ..
-mv linux_"$clang_arch"_libclang.tar.zst artifacts/linux_"$clang_arch"_libclang.tar.zst
+mv "linux_${clang_arch}_libclang.tar.zst" "artifacts/linux_${clang_arch}_libclang.tar.zst"

@@ -1,5 +1,5 @@
-build:clang
-build:clang-$clang_major
-build:clang-cl
-build:clang-cpp
-build:clang++
+clang
+clang-$clang_major
+clang-cl
+clang-cpp
+clang++

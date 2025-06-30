@@ -33,26 +33,18 @@ jobs:
       - name: Clone scufflecloud/toolchains repo
         uses: actions/checkout@v4
 
-      - name: Get args
-        run: |
-          runner=${{ matrix.runner }}
-          runner_tag="${runner}"
-          
-          DOCKER_IMAGE_TAG="clang-${{ inputs.clang_version }}-$runner_tag"
-          echo "DOCKER_IMAGE_TAG=$DOCKER_IMAGE_TAG" >> $GITHUB_ENV
-
       - name: Build in Docker
         run: |
           cd clang
           docker build \
             --build-arg CLANG_VERSION="${{ inputs.clang_version }}" \
             --target package_image \
-            --tag "$DOCKER_IMAGE_TAG" \
+            --tag clang_build \
             .
 
       - name: Package Toolchain
         run: |
-          container_id="$(docker create $DOCKER_IMAGE_TAG)"
+          container_id="$(docker create clang_build)"
           docker cp "$container_id:/downloads/artifacts" .
 
       - name: Upload toolchain to release
@@ -90,41 +82,10 @@ jobs:
           fetch-depth: 1 # llvm-project is quite large
           path: llvm-project
 
-      - name: Get args
-        run: |
-          case ${{ matrix.runner }} in
-            "macos-14")
-              CLANG_ARCH=aarch64
-              ZSTD_ARG="-Dzstd_LIBRARY=/opt/homebrew/opt/zstd/lib/libzstd.a"
-            ;;
-            "macos-13")
-              CLANG_ARCH=x86_64
-              ZSTD_ARG=""
-            ;;
-            *)
-              echo "Programming error, unknown platform"
-              exit 1
-            ;;
-          esac
-
-          echo "CLANG_ARCH=$CLANG_ARCH" >> $GITHUB_ENV
-          echo "CLANG_TARGET=$CLANG_ARCH-apple-darwin" >> $GITHUB_ENV
-
-          CLANG_VERSION=${{ inputs.clang_version }}
-          clang_major_minor=$(echo "$CLANG_VERSION" | cut -d. -f1-2)
-          clang_major=$(echo "$CLANG_VERSION" | cut -d '.' -f 1)
-          echo "CLANG_VERSION=$CLANG_VERSION" >> $GITHUB_ENV
-          
-          echo "clang_version=$CLANG_VERSION" >> $GITHUB_ENV
-          echo "clang_major_minor=$clang_major_minor" >> $GITHUB_ENV
-          echo "clang_major=$clang_major" >> $GITHUB_ENV
-          echo "shared_extension=dylib" >> $GITHUB_ENV
-
-          echo "ZSTD_ARG=$ZSTD_ARG" >> $GITHUB_ENV
-    
       - name: cmake configure
         # Note: Unlike Linux we don't statically link libstdc++
-        run: | 
+        run: |
+          set -exuo pipefail
           cd llvm-project
           cmake -G Ninja -S llvm -B build \
               -DCMAKE_BUILD_TYPE=Release \
@@ -143,12 +104,14 @@ jobs:
               -DLLVM_INCLUDE_TESTS=OFF \
               -DLLVM_INCLUDE_EXAMPLES=OFF \
               -DLLVM_INCLUDE_BENCHMARKS=OFF \
-              -DLLVM_INCLUDE_DOCS=OFF ${{ env.ZSTD_ARG }}
+              -DLLVM_INCLUDE_DOCS=OFF \
+              -Dzstd_LIBRARY=/opt/homebrew/opt/zstd/lib/libzstd.a
 
       - name: build clang
         run: |
+          set -exuo pipefail
           cd llvm-project
-          cmake --build build --target \
+          cmake --build build --config Release --target \
             clang \
             lld \
             llvm-ar \
@@ -172,42 +135,49 @@ jobs:
             builtins \
             libclang
 
+      - name: setup template vars
+        run: |
+          set -exuo pipefail
+          # These variables are used in the txt files to subst values.
+          echo "clang_major=$(echo "${{ inputs.clang_version }}" | cut -d '.' -f 1)" >> $GITHUB_ENV
+          echo "clang_major_minor=$(echo "${{ inputs.clang_version }}" | cut -d '.' -f 1-2)" >> $GITHUB_ENV
+          echo "clang_target=$(uname -m)-apple-darwin" >> $GITHUB_ENV
+          echo "shared_extension=dylib" >> $GITHUB_ENV
+
       - name: package toolchain
         run: |
+          set -exuo pipefail
           mkdir package 
 
           for dir in bin include lib; do
-            mkdir package/$dir
-            cat clang/$dir.txt | while read -r val; do 
-              val=${val#mac:}
-              if [[ $val != linux* && -n $val ]]; then
-                eval cp -rP llvm-project/build/$dir/$val package/$dir/
+            mkdir "package/${dir}"
+            cat "clang/${dir}.txt" | while read -r val; do 
+              val="${val#mac:}"
+              if [[ ${val} != linux* && -n ${val} ]]; then
+                eval cp -rP "llvm-project/build/${dir}/${val}" "package/${dir}/"
               fi
             done
           done
 
           cd package
-          tar -cf - * | zstd --ultra -22 -o "../darwin_$CLANG_ARCH.tar.zst"
+          tar -cf - * | zstd --ultra -22 -o "../darwin_${CLANG_ARCH}.tar.zst"
 
       - name: package libclang
         run: |
+          set -exuo pipefail
           mkdir package_libclang
 
           for dir in bin lib; do
-            mkdir package_libclang/$dir
-            cat clang/"$dir"_libclang.txt | while read -r val; do
+            mkdir "package_libclang/${dir}"
+            cat "clang/${dir}_libclang.txt" | while read -r val; do
               # Skip anything that starts with "linux".
-              if [[ "$val" == linux* && -n $val ]]; then
+              if [[ "${val}" == linux* && -n ${val} ]]; then
                   continue
               fi
               # Strip the 'mac:' prefix if it exists.
-              val=${val#mac:}
+              val="${val#mac:}"
 
-              # Unlike Linux we build into a single directory.
-              build_dir="build"
-              # Strip the 'build:' prefix if it exists.
-              val=${val#build:}
-              eval cp -rP llvm-project/$build_dir/$dir/$val package_libclang/$dir/
+              eval cp -rP "llvm-project/build/${dir}/${val}" "package_libclang/${dir}/"
             done
           done
 
