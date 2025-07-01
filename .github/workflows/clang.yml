@@ -85,6 +85,11 @@ jobs:
       - name: cmake configure
         # Note: Unlike Linux we don't statically link libstdc++
         run: |
+          extra_args=()
+          if [[ "${{ runner.arch }}" == "ARM64" ]]; then
+            extra_args+=("-Dzstd_LIBRARY=/opt/homebrew/opt/zstd/lib/libzstd.a")
+          fi
+
           set -exuo pipefail
           cd llvm-project
           cmake -G Ninja -S llvm -B build \
@@ -105,7 +110,7 @@ jobs:
               -DLLVM_INCLUDE_EXAMPLES=OFF \
               -DLLVM_INCLUDE_BENCHMARKS=OFF \
               -DLLVM_INCLUDE_DOCS=OFF \
-              -Dzstd_LIBRARY=/opt/homebrew/opt/zstd/lib/libzstd.a
+              "${extra_args[@]}"
 
       - name: build clang
         run: |
