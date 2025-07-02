@@ -1,7 +1,8 @@
 FROM ubuntu:22.04 AS base_image
 
-# Tools needed to install bootsrap clang.
-RUN apt-get update && apt-get install -y \
+RUN sed -i 's/archive.ubuntu.com/mirrors.mit.edu\/ubuntu/g' /etc/apt/sources.list && \
+    sed -i 's/security.ubuntu.com/mirrors.mit.edu\/ubuntu/g' /etc/apt/sources.list && \
+    apt-get update && apt-get install -y \
     wget \
     lsb-release \
     software-properties-common \
@@ -9,7 +10,6 @@ RUN apt-get update && apt-get install -y \
     clang \
     llvm \
     lld
-
 
 FROM base_image AS llvm_image
 
