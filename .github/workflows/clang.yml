@@ -85,9 +85,9 @@ jobs:
       - name: cmake configure
         # Note: Unlike Linux we don't statically link libstdc++
         run: |
-          extra_args=()
+          ZLIB_ARG=""
           if [[ "${{ runner.arch }}" == "ARM64" ]]; then
-            extra_args+=("-Dzstd_LIBRARY=/opt/homebrew/opt/zstd/lib/libzstd.a")
+            ZLIB_ARG="-Dzstd_LIBRARY=/opt/homebrew/opt/zstd/lib/libzstd.a"
           fi
 
           set -exuo pipefail
@@ -109,8 +109,7 @@ jobs:
               -DLLVM_INCLUDE_TESTS=OFF \
               -DLLVM_INCLUDE_EXAMPLES=OFF \
               -DLLVM_INCLUDE_BENCHMARKS=OFF \
-              -DLLVM_INCLUDE_DOCS=OFF \
-              "${extra_args[@]}"
+              -DLLVM_INCLUDE_DOCS=OFF ${ZLIB_ARG}
 
       - name: build clang
         run: |
