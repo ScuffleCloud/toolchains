@@ -88,6 +88,9 @@ jobs:
           ZLIB_ARG=""
           if [[ "${{ runner.arch }}" == "ARM64" ]]; then
             ZLIB_ARG="-Dzstd_LIBRARY=/opt/homebrew/opt/zstd/lib/libzstd.a"
+            echo "CLANG_ARCH=aarch64" >> $GITHUB_ENV
+          else
+            echo "CLANG_ARCH=x86_64" >> $GITHUB_ENV
           fi
 
           set -exuo pipefail
@@ -186,7 +189,7 @@ jobs:
           done
 
           cd package_libclang
-          tar -cf - * | zstd --ultra -22 -o ../darwin_"$CLANG_ARCH"_libclang.tar.zst
+          tar -cf - * | zstd --ultra -22 -o ../darwin_"${CLANG_ARCH}"_libclang.tar.zst
 
       - name: Upload Toolchain Artifact
         uses: actions/upload-artifact@v4
