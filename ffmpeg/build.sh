@@ -10,9 +10,9 @@ else
     export CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)"
 fi
 
-local version="$1"
-local install_dir="$2"
-local build_dir="${3:-build}"
+version="$1"
+install_dir="$2"
+build_dir="${3:-build}"
 
 cmake -GNinja -B "${build_dir}" \
     -DCMAKE_INSTALL_PREFIX="${install_dir}" \
