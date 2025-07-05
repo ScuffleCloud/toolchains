@@ -3,7 +3,7 @@ project(gperf)
 if(WIN32)
     set(ENV_ARGS "CFLAGS=/O2 /Ob2 /Gy /DNDEBUG")
 else()
-    set(ENV_ARGS "CFLAGS=-O3")
+    set(ENV_ARGS "CFLAGS=-O3 -std=c++17 -Dregister= -Wno-register")
 endif()
 
 add_external_target(gperf
