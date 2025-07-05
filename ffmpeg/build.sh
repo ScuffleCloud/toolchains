@@ -24,4 +24,4 @@ cmake -GNinja -B "${build_dir}" \
     -DPERL_BIN="$(which perl)" \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 
-cmake --build "${build_dir}" --config Release --parallel "${CMAKE_BUILD_PARALLEL_LEVEL}"
+cmake --build "${build_dir}" --config Release --parallel "${CMAKE_BUILD_PARALLEL_LEVEL}" --target install
