@@ -16,10 +16,7 @@ add_external_target(fontconfig
         -Dtools=disabled
     BUILD_COMMAND ${MESON_BIN} compile -C <BINARY_DIR>
     INSTALL_COMMAND ${MESON_BIN} install -C <BINARY_DIR>
-    DEPENDS libexpat libpng zlib libfreetype gperf
-    ENV_ARGS 
-        --modify PATH=path_list_prepend:$<TARGET_PROPERTY:gperf,PATH>
-        ${EXTRA_LDFLAGS}
+    DEPENDS libexpat libpng zlib libfreetype
 )
 
 ExternalProject_Add_Step(

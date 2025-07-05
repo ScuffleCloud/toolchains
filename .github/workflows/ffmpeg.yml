@@ -37,7 +37,7 @@ jobs:
 
       - name: Install required tools (macos)
         if: ${{ runner.os == 'macOS'}}
-        run: brew install git nasm yasm make meson ninja pkg-config gettext libiconv zstd
+        run: brew install git nasm yasm make meson ninja pkg-config gettext libiconv zstd gperf
 
       - name: Install required tools (linux)
         if: ${{ runner.os == 'Linux'}}
@@ -55,6 +55,7 @@ jobs:
             make \
             nasm \
             yasm \
+            gperf \
             pkg-config
 
           curl -L https://apt.llvm.org/llvm.sh | sudo bash -s -- 20
