@@ -82,7 +82,7 @@ jobs:
       - name: Upload toolchain to release
         uses: svenstaro/upload-release-action@v2
         with:
-          file: "artifacts/*.tar.zst"
+          file: "ffmpeg/artifacts/*.tar.zst"
           file_glob: true
           tag: ${{ env.GIT_TAG }}
           overwrite:  ${{ env.OVERWRITE }}
