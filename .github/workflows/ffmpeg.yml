@@ -1,0 +1,76 @@
+on:
+  workflow_dispatch:
+    inputs:
+      ffmpeg_version:
+        description: "Version of ffmpeg we'll build."
+        type: string
+        required: true
+      github_tag:
+        description: "Tag to upload the release to."
+        type: string
+      overwrite:
+        description: "DANGEROUS. Overwrite the existing artifacts."
+        type: boolean
+
+name: Ffmpeg
+
+env:
+  GIT_TAG: ${{ inputs.github_tag ||  format('ffmpeg-{0}-{1}', inputs.ffmpeg_version, github.run_id) }}
+  OVERWRITE: ${{ inputs.overwrite || inputs.github_tag == '' }}
+
+jobs:
+  build:
+    name: build ffmpeg ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        runner:
+          - ubicloud-standard-8-ubuntu-2204 # linux-x86_64
+          - ubicloud-standard-8-arm-ubuntu-2204 # linux-aarch64
+          - macos-13 # macos-x86_64
+          - macos-14 # macos-aarch64
+    permissions:
+      contents: write
+    steps:
+      - name: Clone scufflecloud/toolchains repo
+        uses: actions/checkout@v4
+
+      - name: Install required tools (macos)
+        if: ${{ runner.os == 'macOS'}}
+        run: brew install ninja zstd
+
+      - name: Install required tools (linux)
+        if: ${{ runner.os == 'Linux'}}
+        run: |
+          apt-get update
+          apt-get install -y \
+            wget \
+            lsb-release \
+            software-properties-common \
+            gnupg \
+            clang \
+            llvm \
+            lld \
+            zstd \
+            cmake \
+            gcc \
+            ninja-build
+
+      - name: Build
+        run: bash ./build.sh "${{ inputs.ffmpeg_version }}" "install"
+
+      - name: Package
+        run: |
+          arch="$(uname -m)"
+          os="$(uname -s)"
+          mkdir artifacts
+          cd install
+          tar -cf - * | zstd --ultra -22 -o "../artifacts/ffmpeg_${{ inputs.ffmpeg_version }}_${os,,}_${arch,,}.tar.zst"
+
+      - name: Upload toolchain to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file: "artifacts/*.tar.zst"
+          file_glob: true
+          tag: ${{ env.GIT_TAG }}
+          overwrite:  ${{ env.OVERWRITE }}
