@@ -37,7 +37,7 @@ jobs:
 
       - name: Install required tools (macos)
         if: ${{ runner.os == 'macOS'}}
-        run: brew install ninja zstd meson perl make
+        run: brew install git nasm yasm make meson ninja pkg-config gettext libiconv zstd
 
       - name: Install required tools (linux)
         if: ${{ runner.os == 'Linux'}}
@@ -53,11 +53,12 @@ jobs:
             lld \
             zstd \
             cmake \
-            gcc \
             ninja-build \
             perl \
             make \
-            nasm
+            nasm \
+            yasm \
+            pkg-config
 
           pip3 install --user meson
       
