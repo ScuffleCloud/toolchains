@@ -48,9 +48,6 @@ jobs:
             lsb-release \
             software-properties-common \
             gnupg \
-            clang \
-            llvm \
-            lld \
             zstd \
             cmake \
             ninja-build \
@@ -60,10 +57,12 @@ jobs:
             yasm \
             pkg-config
 
+          curl -L https://apt.llvm.org/llvm.sh | bash -s -- 20
+
           pip3 install --user meson
-          echo "CC=$(which clang)" >> $GITHUB_ENV
-          echo "CXX=$(which clang++)" >> $GITHUB_ENV
-          echo "LD=$(which lld)" >> $GITHUB_ENV
+          echo "CC=$(which clang-20)" >> $GITHUB_ENV
+          echo "CXX=$(which clang++-20)" >> $GITHUB_ENV
+          echo "LD=$(which lld-20)" >> $GITHUB_ENV
       
       - name: Build
         run: |
