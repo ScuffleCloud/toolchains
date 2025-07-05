@@ -55,9 +55,14 @@ jobs:
             cmake \
             gcc \
             ninja-build \
-            meson \
             perl \
             make
+
+          pip3 install --user meson
+      
+      - name: Install meson
+        run: |
+          pip3 install --user meson
 
       - name: Build
         run: |
