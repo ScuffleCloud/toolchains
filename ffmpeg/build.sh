@@ -17,7 +17,7 @@ build_dir="${3:-build}"
 cmake -GNinja -B "${build_dir}" \
     -DCMAKE_INSTALL_PREFIX="${install_dir}" \
     -DCMAKE_BUILD_TYPE=Release \
-    -DFFMPEG_TAG="${tag}" \
+    -DFFMPEG_TAG="${version}" \
     -DBASH_BIN="$(which bash)" \
     -DMAKE_BIN="$(which make)" \
     -DMESON_BIN="$(which meson)" \
