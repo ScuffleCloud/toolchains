@@ -60,10 +60,6 @@ jobs:
 
           pip3 install --user meson
       
-      - name: Install meson
-        run: |
-          pip3 install --user meson
-
       - name: Build
         run: |
           cd ffmpeg
