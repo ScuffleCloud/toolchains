@@ -57,12 +57,15 @@ jobs:
             ninja-build
 
       - name: Build
-        run: bash ./build.sh "${{ inputs.ffmpeg_version }}" "install"
+        run: |
+          cd ffmpeg
+          bash ./build.sh "${{ inputs.ffmpeg_version }}" "install"
 
       - name: Package
         run: |
           arch="$(uname -m)"
           os="$(uname -s)"
+          cd ffmpeg
           mkdir artifacts
           cd install
           tar -cf - * | zstd --ultra -22 -o "../artifacts/ffmpeg_${{ inputs.ffmpeg_version }}_${os,,}_${arch,,}.tar.zst"
