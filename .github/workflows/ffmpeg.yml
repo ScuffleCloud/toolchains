@@ -42,8 +42,8 @@ jobs:
       - name: Install required tools (linux)
         if: ${{ runner.os == 'Linux'}}
         run: |
-          apt-get update
-          apt-get install -y \
+          sudo apt-get update
+          sudo apt-get install -y \
             wget \
             lsb-release \
             software-properties-common \
