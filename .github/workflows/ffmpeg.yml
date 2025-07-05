@@ -57,7 +57,7 @@ jobs:
             yasm \
             pkg-config
 
-          curl -L https://apt.llvm.org/llvm.sh | bash -s -- 20
+          curl -L https://apt.llvm.org/llvm.sh | sudo bash -s -- 20
 
           pip3 install --user meson
           echo "CC=$(which clang-20)" >> $GITHUB_ENV
