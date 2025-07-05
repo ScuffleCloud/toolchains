@@ -37,7 +37,7 @@ jobs:
 
       - name: Install required tools (macos)
         if: ${{ runner.os == 'macOS'}}
-        run: brew install ninja zstd
+        run: brew install ninja zstd meson perl make
 
       - name: Install required tools (linux)
         if: ${{ runner.os == 'Linux'}}
@@ -54,7 +54,10 @@ jobs:
             zstd \
             cmake \
             gcc \
-            ninja-build
+            ninja-build \
+            meson \
+            perl \
+            make
 
       - name: Build
         run: |
