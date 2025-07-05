@@ -61,6 +61,9 @@ jobs:
             pkg-config
 
           pip3 install --user meson
+          echo "CC=$(which clang)" >> $GITHUB_ENV
+          echo "CXX=$(which clang++)" >> $GITHUB_ENV
+          echo "LD=$(which lld)" >> $GITHUB_ENV
       
       - name: Build
         run: |
