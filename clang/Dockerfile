@@ -70,3 +70,5 @@ RUN ./clang_package.sh $CLANG_VERSION
 FROM scratch AS package_image
 
 COPY --from=archive_image /downloads/artifacts /artifacts
+
+CMD ["true"]
