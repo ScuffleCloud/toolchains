@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 AS base_image
+FROM docker.io/library/ubuntu:20.04 AS base_image
 
 RUN sed -i 's/archive.ubuntu.com/mirrors.mit.edu\/ubuntu/g' /etc/apt/sources.list && \
     sed -i 's/security.ubuntu.com/mirrors.mit.edu\/ubuntu/g' /etc/apt/sources.list && \
@@ -30,6 +30,9 @@ RUN git clone \
 
 FROM llvm_image AS build_image
 
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg > /dev/null && \
+    echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | tee /etc/apt/sources.list.d/kitware.list > /dev/null
+
 RUN apt-get update && apt-get install -y \
     # Tools needed by the build process.
     zstd \
@@ -48,7 +51,7 @@ COPY clang_build.sh clang_build.sh
 RUN chmod +x clang_build.sh
 RUN ./clang_build.sh $CLANG_VERSION
 
-FROM build_image AS package_image
+FROM build_image AS archive_image
 
 WORKDIR /downloads
 
@@ -63,3 +66,7 @@ COPY clang_package.sh clang_package.sh
 RUN chmod +x clang_package.sh
 
 RUN ./clang_package.sh $CLANG_VERSION
+
+FROM scratch AS package_image
+
+COPY --from=archive_image downloads/artifacts artifacts

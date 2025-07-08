@@ -45,7 +45,7 @@ jobs:
       - name: Package Toolchain
         run: |
           container_id="$(docker create clang_build)"
-          docker cp "$container_id:/downloads/artifacts" .
+          docker cp "$container_id:/artifacts" .
 
       - name: Upload toolchain to release
         uses: svenstaro/upload-release-action@v2
