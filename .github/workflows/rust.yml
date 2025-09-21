@@ -104,10 +104,12 @@ jobs:
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
 
       - name: Transform needs outputs
         run: |
-          jq -s 'add' *.json > ${{ inputs.rust_version }}-checksums.json
+          jq -s 'add' ./artifacts/*/*.json > ${{ inputs.rust_version }}-checksums.json
 
       - name: Upload zstd Compressed Artifacts to Release
         uses: svenstaro/upload-release-action@v2
