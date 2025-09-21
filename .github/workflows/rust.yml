@@ -21,9 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    outputs:
-      filename: ${{ steps.download.outputs.filename }}
-      checksum: ${{ steps.download.outputs.checksum }}
     strategy:
       matrix:
         target:
@@ -80,8 +77,16 @@ jobs:
           tar -xJf "${xz_name}"
           output_file="../artifacts/${full_name}.tar.zst"
           tar -cf - "${full_name}" | zstd --ultra -22 -o "${output_file}"
-          echo "filename=${full_name}" >> $GITHUB_OUTPUT
-          echo "checksum=$(sha256sum "$output_file")"
+
+          jq -n --arg filename "$full_name" --arg checksum "$(sha256sum "$output_file")" '{($k): $v}' > "${full_name}.checksum.json"
+          echo "checksum-file=${full_name}.checksum.json" >> $GITHUB_OUTPUT
+
+      - name: Upload checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.component }}-${{ matrix.target }}
+          path: ${{ steps.download.outputs.checksum-file }}
+          retention-days: 1
 
       - name: Upload zstd Compressed Artifacts to Release
         uses: svenstaro/upload-release-action@v2
@@ -97,9 +102,12 @@ jobs:
     name: Upload a checksum file
     runs-on: ubuntu-latest
     steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
       - name: Transform needs outputs
         run: |
-          echo '${{ toJSON(needs) }}' | jq 'to_entries | map(.value.outputs | {(.name): .checksum}) | add' > ${{ inputs.rust_version }}-checksums.json
+          jq -s 'add' *.json > ${{ inputs.rust_version }}-checksums.json
 
       - name: Upload zstd Compressed Artifacts to Release
         uses: svenstaro/upload-release-action@v2
