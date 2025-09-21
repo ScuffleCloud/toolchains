@@ -78,7 +78,9 @@ jobs:
           output_file="../artifacts/${full_name}.tar.zst"
           tar -cf - "${full_name}" | zstd --ultra -22 -o "${output_file}"
 
-          jq -n --arg filename "$full_name" --arg checksum "$(sha256sum "$output_file")" '{($filename): $checksum}' > "../${full_name}.checksum.json"
+          checksum="$(sha256sum "${output_file}" | cut -d' ' -f1)"
+
+          jq -n --arg filename "${full_name}" --arg checksum "${checksum}" '{($filename): $checksum}' > "../${full_name}.checksum.json"
           echo "checksum-file=${full_name}.checksum.json" >> $GITHUB_OUTPUT
 
       - name: Upload checksum
