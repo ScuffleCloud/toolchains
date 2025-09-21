@@ -113,11 +113,14 @@ jobs:
 
       - name: Transform needs outputs
         run: |
-          jq -s 'add' ./artifacts/*/*.json > ${{ inputs.rust_version }}-checksums.json
+          version="${{ inputs.rust_version }}"
+          result="${version//\//_}"
+          jq -s 'add' ./artifacts/*/*.json > "${result}-checksums.json"
 
       - name: Upload checksums to tag
         uses: svenstaro/upload-release-action@v2
         with:
-          file: "${{ inputs.rust_version }}-checksums.json"
+          file: "*-checksums.json"
           tag: ${{ inputs.github_tag }}
           overwrite: true
+          file_glob: true
