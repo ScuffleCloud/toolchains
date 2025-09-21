@@ -21,6 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      filename: ${{ steps.download.outputs.filename }}
+      checksum: ${{ steps.download.outputs.checksum }}
     strategy:
       matrix:
         target:
@@ -41,71 +44,66 @@ jobs:
         include:
           - target: "wasm32-unknown-unknown"
             component: "rust-std"
+          - component: "rust-src"
 
     steps:
-      - name: Download Rust Components
+      - name: Download Rust Component
+        id: download
         run: |
           mkdir downloads
           mkdir artifacts
 
-          component=${{ matrix.component }}
-          target=${{ matrix.target }}
-          version=${{ inputs.rust_version }}
+          component="${{ matrix.component }}"
+          target="${{ matrix.target }}"
+          version="${{ inputs.rust_version }}"
 
           cd downloads
 
           if [[ $version =~ ^(nightly|beta) ]]; then
-            IFS='/' read -r channel date <<< "$version"
-            export full_name="$component-$channel-$target"
-            export url_prefix=https://static.rust-lang.org/dist/$date
+            IFS='/' read -r channel date <<< "${version}"
+            version="${channel}"
+            url_prefix=https://static.rust-lang.org/dist/$date
           else
             echo "STABLE"
-            export full_name="$component-$version-$target"
-            export url_prefix=https://static.rust-lang.org/dist
+            url_prefix=https://static.rust-lang.org/dist
           fi
-          
-          xz_name="$full_name.tar.xz"
-          wget "$url_prefix/$xz_name"
-          
-          tar -xJf $xz_name
-          tar -cf - $full_name | zstd --ultra -22 -o "../artifacts/$full_name.tar.zst"
 
-      - name: Download rust-src Component
-        if: matrix.component == 'rustc' && matrix.target == 'x86_64-unknown-linux-gnu'
-        run: |
-          component="rust-src"
-          version=${{ inputs.rust_version }}
-
-          cd downloads
-
-          if [[ $version =~ ^(nightly|beta) ]]; then
-            IFS='/' read -r channel date <<< "$version"
-            export full_name="$component-$channel"
-            export url_prefix=https://static.rust-lang.org/dist/$date
+          if [[ -n "${target}" ]]; then
+            full_name="${component}-${version}-${target}"
           else
-            echo "STABLE"
-            export full_name="$component-$version"
-            export url_prefix=https://static.rust-lang.org/dist
+            full_name="${component}-${version}"
           fi
           
-          xz_name="$full_name.tar.xz"
-          wget "$url_prefix/$xz_name"
+          xz_name="${full_name}.tar.xz"
+          wget "${url_prefix}/${xz_name}"
           
-          tar -xJf $xz_name
-          tar -cf - $full_name | zstd --ultra -22 -o "../artifacts/$full_name.tar.zst"
-
-      - name: Determine Release Tag
-        run: |
-          RELEASE_TAG="rust-${{ inputs.rust_version }}"
-          if [ -n "${{ inputs.github_tag }}" ]; then
-            RELEASE_TAG="${{ inputs.github_tag }}"
-          fi
-          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+          tar -xJf "${xz_name}"
+          output_file="../artifacts/${full_name}.tar.zst"
+          tar -cf - "${full_name}" | zstd --ultra -22 -o "${output_file}"
+          echo "filename=${full_name}" >> $GITHUB_OUTPUT
+          echo "checksum=$(sha256sum "$output_file")"
 
       - name: Upload zstd Compressed Artifacts to Release
         uses: svenstaro/upload-release-action@v2
         with:
           file: "artifacts/*.tar.zst"
           file_glob: true
-          tag: ${{ env.RELEASE_TAG }}
+          tag: ${{ inputs.github_tag }}
+          overwrite: true
+
+
+  upload-checksum:
+    needs: [recompress_rust]
+    name: Upload a checksum file
+    runs-on: ubuntu-latest
+    steps:
+      - name: Transform needs outputs
+        run: |
+          echo '${{ toJSON(needs) }}' | jq 'to_entries | map(.value.outputs | {(.name): .checksum}) | add' > ${{ inputs.rust_version }}-checksums.json
+
+      - name: Upload zstd Compressed Artifacts to Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file: "${{ inputs.rust_version }}-checksums.json"
+          tag: ${{ inputs.github_tag }}
           overwrite: true
