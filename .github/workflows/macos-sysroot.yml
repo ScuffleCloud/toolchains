@@ -45,7 +45,7 @@ jobs:
           mkdir artifacts
 
           cp -rP $SDK_PATH/* working/$SDK_NAME
-          cat macos-sysroot/remove.txt | while read -r val; do eval rm -v working/$SDK_NAME/$val || true; done
+          cat macos-sysroot/remove.txt | while read -r val; do eval rm -rf -v working/$SDK_NAME/$val || true; done
           cd working
           tar -cf - $SDK_NAME/* | zstd --ultra -22 -o "../artifacts/$SDK_NAME.tar.zst"
 
