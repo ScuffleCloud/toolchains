@@ -4,3 +4,4 @@ System/Library/Frameworks/IOKit.framework
 System/Library/Frameworks/Kernel.framework
 System/Library/Frameworks/Security.framework
 System/Library/Frameworks/SystemConfiguration.framework
+System/Library/Frameworks/CoreServices.framework
