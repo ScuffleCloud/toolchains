@@ -5,6 +5,9 @@ on:
         description: "Version of openssl we'll build."
         type: string
         required: true
+      zlib_version:
+        description: "Version of zlib we'll build."
+        type: string
       github_tag:
         description: "Tag to upload the release to."
         type: string
@@ -61,7 +64,8 @@ jobs:
 
       - name: Build Zlib
         run: |
-          git clone https://github.com/madler/zlib.git -b "${ZLIB_VERSION}" --depth 1
+          ZLIB_VERSION="${{ inputs.zlib_version }}"
+          git clone https://github.com/madler/zlib.git -b "${ZLIB_VERSION:-1.3.1}" --depth 1
           pushd zlib
           ./configure --prefix="${DIST_DIR}/zlib" --static
           make -j$(nproc)
@@ -69,7 +73,8 @@ jobs:
 
       - name: Build OpenSSL
         run: |
-          git clone https://github.com/openssl/openssl.git -b "${OPENSSL_VERSION}" --depth 1
+          OPENSSL_VERSION="${{ inputs.openssl_version }}"
+          git clone https://github.com/openssl/openssl.git -b "${OPENSSL_VERSION:-3.3.2}" --depth 1
           pushd openssl
           ./Configure --prefix="${DIST_DIR}/openssl" --with-zlib-include="${DIST_DIR}/zlib/include" --with-zlib-lib="${DIST_DIR}/zlib/lib" -Wl,-rpath,'$$ORIGIN'
           make -j$(nproc)
