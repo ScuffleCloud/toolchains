@@ -65,6 +65,8 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Download all artifacts
@@ -86,4 +88,3 @@ jobs:
           files: release/*.tar.zst
           draft: false
           prerelease: false
-          overwrite: true
