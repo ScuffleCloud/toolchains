@@ -1,26 +1,20 @@
 on:
   workflow_dispatch:
     inputs:
-      ffmpeg_version:
-        description: "Version of ffmpeg we'll build."
+      openssl_version:
+        description: "Version of openssl we'll build."
         type: string
         required: true
       github_tag:
         description: "Tag to upload the release to."
         type: string
-      overwrite:
-        description: "DANGEROUS. Overwrite the existing artifacts."
-        type: boolean
+        required: true
 
-name: Ffmpeg
-
-env:
-  GIT_TAG: ${{ inputs.github_tag ||  format('ffmpeg-{0}-{1}', inputs.ffmpeg_version, github.run_id) }}
-  OVERWRITE: ${{ inputs.overwrite || inputs.github_tag == '' }}
+name: OpenSSL
 
 jobs:
   build:
-    name: build ffmpeg ${{ matrix.runner }}
+    name: build openssl ${{ matrix.runner }}
     runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
@@ -37,7 +31,7 @@ jobs:
 
       - name: Install required tools (macos)
         if: ${{ runner.os == 'macOS'}}
-        run: brew install git nasm yasm make meson ninja pkg-config gettext libiconv zstd gperf
+        run: brew install git nasm yasm make zstd perl
 
       - name: Install required tools (linux)
         if: ${{ runner.os == 'Linux'}}
@@ -46,43 +40,53 @@ jobs:
           sudo apt-get install -y \
             wget \
             lsb-release \
-            software-properties-common \
-            gnupg \
             zstd \
-            cmake \
-            ninja-build \
             perl \
             make \
             nasm \
-            yasm \
-            gperf \
-            pkg-config
+            yasm
 
           curl -L https://apt.llvm.org/llvm.sh | sudo bash -s -- 20
 
-          pip3 install --user meson
           echo "CC=$(which clang-20)" >> $GITHUB_ENV
           echo "CXX=$(which clang++-20)" >> $GITHUB_ENV
           echo "LD=$(which lld-20)" >> $GITHUB_ENV
-      
-      - name: Build
+
+      - name: Setup dist dir
         run: |
-          cd ffmpeg
-          bash ./build.sh "${{ inputs.ffmpeg_version }}" "install"
+          mkdir -p dist/{zlib,openssl}
+          dist_dir=$(realpath dist)
+          echo "DIST_DIR=$dist_dir" >> $GITHUB_ENV
+
+
+      - name: Build Zlib
+        run: |
+          git clone https://github.com/madler/zlib.git -b "${ZLIB_VERSION}" --depth 1
+          pushd zlib
+          ./configure --prefix="${DIST_DIR}/zlib" --static
+          make -j$(nproc)
+          make install
+
+      - name: Build OpenSSL
+        run: |
+          git clone https://github.com/openssl/openssl.git -b "${OPENSSL_VERSION}" --depth 1
+          pushd openssl
+          ./Configure --prefix="${DIST_DIR}/openssl" --with-zlib-include="${DIST_DIR}/zlib/include" --with-zlib-lib="${DIST_DIR}/zlib/lib" -Wl,-rpath,'$$ORIGIN'
+          make -j$(nproc)
+          make install
 
       - name: Package
         run: |
           arch="$(uname -m)"
           os="$(uname -s)"
-          cd ffmpeg
           mkdir artifacts
-          cd install
-          tar -cf - * | zstd --ultra -22 -o "../artifacts/ffmpeg_${{ inputs.ffmpeg_version }}_${os,,}_${arch,,}.tar.zst"
+          cd dist/openssl
+          tar -cf - * | zstd --ultra -22 -o "../../artifacts/openssl_${{ inputs.openssl_version }}_${os,,}_${arch,,}.tar.zst"
 
       - name: Upload toolchain to release
         uses: svenstaro/upload-release-action@v2
         with:
-          file: "ffmpeg/artifacts/*.tar.zst"
+          file: "artifacts/*.tar.zst"
           file_glob: true
-          tag: ${{ env.GIT_TAG }}
-          overwrite:  ${{ env.OVERWRITE }}
+          tag: ${{ inputs.github_tag }}
+          overwrite: true
