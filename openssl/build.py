@@ -109,7 +109,7 @@ def build_openssl(working_dir: Path, source_dir: Path, output_name: str):
     print(f"✓ Build complete: {prefix}\n")
 
 
-def create_archives(openssl_prefix: Path, artifact_dir: Path, openssl_version: str):
+def create_archive(openssl_prefix: Path, artifact_dir: Path, openssl_version: str):
     system, arch = get_platform_info()
     archive_path = artifact_dir / f"{openssl_version}_{system}_{arch}.tar.zst"
     print(f"Creating {archive_path.name}...")
@@ -122,16 +122,16 @@ def create_archives(openssl_prefix: Path, artifact_dir: Path, openssl_version: s
     )
 
     size = archive_path.stat().st_size / (1024 * 1024)
-    print(f"✓ Created {archive_path.name} ({size:.2f} MB)")
+    print(f"✓ Created {archive_path} ({size:.2f} MB)")
 
 
 def main():
     print_header("OpenSSL + Zlib Build")
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("--openssl-version", type=str, required=True, default="3.3.2")
-    parser.add_argument("--artifact-dir", type=str, required=True)
-    parser.add_argument("--working-dir", type=str, required=True, default=mkdtemp())
+    parser.add_argument("--openssl-version", type=str, required=False, default="3.3.2")
+    parser.add_argument("--artifact-dir", type=str, required=False)
+    parser.add_argument("--working-dir", type=str, required=False, default=mkdtemp())
     args = parser.parse_args()
     
     working_dir = Path(args.working_dir)
@@ -144,7 +144,7 @@ def main():
     
     print("\n[2/2] Creating archives...")
     artifact_dir = Path(args.artifact_dir)
-    create_archives(openssl_prefix, artifact_dir, openssl_tag)
+    create_archive(openssl_prefix, artifact_dir, openssl_tag)
     
     print_header("Build complete!")
 
