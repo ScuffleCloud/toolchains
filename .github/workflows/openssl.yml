@@ -29,9 +29,6 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Clone scufflecloud/toolchains repo
-        uses: actions/checkout@v4
-
       - name: Install required tools (macos)
         if: ${{ runner.os == 'macOS'}}
         run: brew install git nasm yasm make zstd perl
