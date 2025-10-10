@@ -137,9 +137,7 @@ def main():
         else args.openssl_version
     )
     source = clone_openssl(working_dir, openssl_tag, f"openssl-{args.openssl_version}")
-    openssl_prefix = build_openssl(
-        working_dir, source, f"openssl-{args.openssl_version}"
-    )
+    openssl_prefix = build_openssl(working_dir, source)
 
     artifact_dir = Path(args.artifact_dir)
     create_archive(openssl_prefix, artifact_dir, openssl_tag)
