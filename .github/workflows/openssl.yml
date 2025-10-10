@@ -5,9 +5,6 @@ on:
         description: "Version of openssl we'll build."
         type: string
         required: true
-      zlib_version:
-        description: "Version of zlib we'll build."
-        type: string
       github_tag:
         description: "Tag to upload the release to."
         type: string
@@ -17,73 +14,74 @@ name: OpenSSL
 
 jobs:
   build:
-    name: build openssl ${{ matrix.runner }}
-    runs-on: ${{ matrix.runner }}
     strategy:
+      fail-fast: false
       matrix:
-        runner:
-          - ubicloud-standard-8-ubuntu-2204 # linux-x86_64
-          - ubicloud-standard-8-arm-ubuntu-2204 # linux-aarch64
-          - macos-13 # macos-x86_64
-          - macos-14 # macos-aarch64
-    permissions:
-      contents: write
-    steps:
-      - name: Install required tools (macos)
-        if: ${{ runner.os == 'macOS'}}
-        run: brew install git nasm yasm make zstd perl
+        include:
+          - os: ubuntu-24.04
+            name: linux-x86_64
+          - os: ubuntu-24.04-arm
+            name: linux-aarch64
+          - os: macos-15-intel
+            name: darwin-x86_64
+          - os: macos-15
+            name: darwin-aarch64
 
-      - name: Install required tools (linux)
-        if: ${{ runner.os == 'Linux'}}
+    runs-on: ${{ matrix.os }}
+    name: Build ${{ matrix.name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies (Linux)
+        if: ${{ runner.os == 'Linux' }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            wget \
-            lsb-release \
-            zstd \
-            perl \
-            make \
-            nasm \
-            yasm \
-            build-essential
+          sudo apt-get install -y build-essential perl zstd
 
-      - name: Setup dist dir
+      - name: Install dependencies (macOS)
+        if: ${{ runner.os == 'macOS' }}
         run: |
-          mkdir -p dist/{zlib,openssl}
-          dist_dir=$(realpath dist)
-          echo "DIST_DIR=$dist_dir" >> $GITHUB_ENV
-
-
-      - name: Build Zlib
-        run: |
-          ZLIB_VERSION="${{ inputs.zlib_version }}"
-          git clone https://github.com/madler/zlib.git -b "${ZLIB_VERSION:-v1.3.1}" --depth 1
-          pushd zlib
-          ./configure --prefix="${DIST_DIR}/zlib" --static
-          make -j$(nproc)
-          make install
+          brew install zstd
 
       - name: Build OpenSSL
-        run: |
-          OPENSSL_VERSION="${{ inputs.openssl_version }}"
-          git clone https://github.com/openssl/openssl.git -b "${OPENSSL_VERSION:-3.3.2}" --depth 1
-          pushd openssl
-          ./Configure --prefix="${DIST_DIR}/openssl" --with-zlib-include="${DIST_DIR}/zlib/include" --with-zlib-lib="${DIST_DIR}/zlib/lib" -Wl,-rpath,'$$ORIGIN'
-          make -j$(nproc)
-          make install
+        run: ./openssl/build.py --openssl-version ${{ inputs.openssl_version }} --artifact-dir ./artifacts
 
-      - name: Package
-        run: |
-          arch="$(uname -m)"
-          os="$(uname -s)"
-          mkdir artifacts
-          cd dist/openssl
-          tar -cf - * | zstd --ultra -22 -o "../../artifacts/openssl_${{ inputs.openssl_version }}_${os,,}_${arch,,}.tar.zst"
-
-      - name: Upload toolchain to release
-        uses: svenstaro/upload-release-action@v2
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
-          file: "artifacts/*.tar.zst"
-          file_glob: true
-          tag: ${{ inputs.github_tag }}
+          name: openssl-${{ matrix.name }}
+          path: "artifacts/*.tar.zst"
+          retention-days: 90
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir release
+          find artifacts -name "*.tar.zst" -exec cp {} release/ \;
+          ls -lh release/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.github_tag }}
+          name: OpenSSL ${{ inputs.openssl_version }}
+          files: release/*.tar.zst
+          draft: false
+          prerelease: false
           overwrite: true
