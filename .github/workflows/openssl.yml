@@ -44,13 +44,8 @@ jobs:
             perl \
             make \
             nasm \
-            yasm
-
-          curl -L https://apt.llvm.org/llvm.sh | sudo bash -s -- 20
-
-          echo "CC=$(which clang-20)" >> $GITHUB_ENV
-          echo "CXX=$(which clang++-20)" >> $GITHUB_ENV
-          echo "LD=$(which lld-20)" >> $GITHUB_ENV
+            yasm \
+            build-essential
 
       - name: Setup dist dir
         run: |
