@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3 -u
 
 import os
 import sys
@@ -51,11 +51,9 @@ def get_configure_target():
 
 def run_command(cmd, cwd=None):
     print(f"Running: {cmd}")
-    result = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True)
+    result = subprocess.run(cmd, shell=True, cwd=cwd)
     if result.returncode != 0:
-        print(f"Error: {result.stderr}")
         sys.exit(1)
-    return result.stdout
 
 def clone_repo(working_dir: Path, repo, branch, output_name):
     source_dir = working_dir / output_name
@@ -107,6 +105,7 @@ def build_openssl(working_dir: Path, source_dir: Path, output_name: str):
     run_command("make install", cwd=source_dir)
     
     print(f"✓ Build complete: {prefix}\n")
+    return prefix
 
 
 def create_archive(openssl_prefix: Path, artifact_dir: Path, openssl_version: str):
